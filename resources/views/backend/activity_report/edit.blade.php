@@ -1,0 +1,108 @@
+{{-- {{ Form::open(['method' => 'POST', 'id' => 'form_create', 'data-async']) }} --}}
+{!! Form::model($activityReport, [
+    'method' => 'PUT',
+    'id' => 'form_update',
+    'data-token' => session('bearerToken'),
+    'data-target' => url('api/activity-report/' . $activityReport->id),
+    'data-async',
+]) !!}
+<div class="modal-body">
+
+    <div class="container-fluid">
+        {{ Form::hidden('_method', 'PUT', ['class' => 'form-control', 'readonly']) }}
+        <div class="row">
+            <div class="form-group col-md-12">
+                <label>{{ __('Program Kerja') }}*</label>
+                {{ Form::select('activityprogram_id', $programs, null, ['class' => 'form-control select2-modal', 'placeholder' => 'select', 'disabled']) }}
+            </div>
+            <div class="form-group col-md-6">
+                <label>{{ __('Tahun') }}*</label>
+                {{ Form::select('year', year_list(), null, ['class' => 'form-control select2-modal', 'placeholder' => 'select']) }}
+            </div>
+            <div class="form-group col-md-6">
+                <label>{{ __('Bulan') }}*</label>
+                {{ Form::select('month', month_list(), null, ['class' => 'form-control select2-modal', 'placeholder' => 'select']) }}
+            </div>
+            <div class="form-group col-md-6">
+                <label>{{ __('Pagu Indikatif') }}*</label>
+                {{ Form::text('pagu_indikatif', custom_number_format($activityReport->pagu_indikatif), ['class' => 'form-control format-number']) }}
+                <span class="font-italic">Pagu indikatif didefinisikan dalam format angka.</span>
+            </div>
+            <div class="form-group col-md-6">
+                <label>{{ __('Target Kinerja') }}*</label>
+                {{ Form::text('target_kinerja', null, ['class' => 'form-control']) }}
+                <span class="font-italic">Contoh: 1 Dokumen RENSTRA, 1 Laporan MONEV , etc.</span>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-12 font-italic">
+                Keterangan:
+                <ul>
+                    <li>* (Mandatory / Tidak boleh kosong)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+</div>
+<div class="modal-footer pt-3 pb-3">
+    <div class="btn-group" role="group">
+        <button type="button" class="btn btn-info mr-1" data-dismiss="modal"
+            style="width: 80px;">{{ __('Batal') }}</button>
+        <button type="submit" class="btn btn-primary btn-save" style="width: 80px;">{{ __('Simpan') }}</button>
+    </div>
+</div>
+{{ Form::close() }}
+
+
+<script>
+    $(document).ready(function() {
+        $('.format-number').on('keyup', formatNumberField);
+    });
+
+    $('form[data-async]').on('submit', function(event) {
+
+        var $form = $(this);
+        var data = $form.serialize();
+
+        $.ajax({
+            type: $form.attr('method'),
+            beforeSend: function(xhr) {
+                xhr.setRequestHeader("Authorization", "Bearer " + $form.attr('data-token'));
+                notice.showLoading({
+                    type: 'dots',
+                    title: 'Loading',
+                });
+            },
+            url: $form.attr('data-target'),
+            data: $form.serialize(),
+            success: function(response) {
+                setTimeout(() => {
+                    notice.hideLoading()
+
+                    if (response.status === 'error') {
+                        var message = response.message;
+                        message.forEach(function(entry) {
+                            notify_payload.call(this, 'Required', entry, 'warning');
+                        });
+                    } else {
+                        notify_payload.call(this, 'Success', response.message, 'success');
+
+                        $('#empModal-xl').modal('hide');
+                        reload.call();
+                    }
+                }, 500)
+            },
+            error: function(response) {
+                setTimeout(() => {
+                    notice.hideLoading()
+
+                    notify_payload.call(this, 'Error', response.statusText, 'error');
+                }, 500)
+            }
+        });
+
+        event.preventDefault();
+    });
+</script>
