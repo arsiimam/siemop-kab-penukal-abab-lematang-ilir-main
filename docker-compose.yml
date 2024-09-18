@@ -1,0 +1,43 @@
+version: "3.9"
+services:
+    app:
+        build:
+            args:
+                user: maruf
+                uid: 1000
+            context: ./
+            dockerfile: Dockerfile
+        image: siemop
+        container_name: siemop
+        restart: unless-stopped
+        working_dir: /var/www/
+        volumes:
+            - ./:/var/www
+            - ./storage/app/uploads:/var/www/html/public/storage
+    mysql:
+        image: mysql:latest
+        container_name: mysql_siemop_db
+        restart: unless-stopped
+        environment:
+            MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+        volumes:
+            - ./docker-compose/mysql:/docker-entrypoint-initdb.d
+    nginx:
+        image: nginx:latest
+        container_name: nginx_siemop
+        restart: unless-stopped
+        ports:
+            - 8000:80
+        volumes:
+            - ./:/var/www
+            - ./docker-compose/nginx:/etc/nginx/conf.d/
+    phpmyadmin:
+        image: phpmyadmin
+        restart: always
+        expose:
+            - "40001"
+        ports:
+            - "40001:80"
+        environment:
+            - PMA_HOST=mysql
+            - PMA_PORT=3306
